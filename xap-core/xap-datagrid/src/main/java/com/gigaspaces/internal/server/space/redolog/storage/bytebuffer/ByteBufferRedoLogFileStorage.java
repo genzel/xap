@@ -465,6 +465,15 @@ public class ByteBufferRedoLogFileStorage<T>
             _logger.fine("closed storage");
     }
 
+    @Override
+    public long getWeight() {
+        try {
+            return size();
+        } catch (StorageException e) {
+           throw new IllegalStateException("failed to get weight from ByteBufferRedoLogFileStorage", e);
+        }
+    }
+
 
     private void initIfNeeded() throws StorageException {
         if (!_initialized) {

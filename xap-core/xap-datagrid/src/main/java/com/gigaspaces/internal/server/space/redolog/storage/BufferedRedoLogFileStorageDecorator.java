@@ -16,6 +16,7 @@
 
 package com.gigaspaces.internal.server.space.redolog.storage;
 
+import com.gigaspaces.internal.cluster.node.impl.backlog.globalorder.GlobalOrderOperationPacket;
 import com.gigaspaces.internal.server.space.redolog.RedoLogFileCompromisedException;
 import com.gigaspaces.logger.Constants;
 
@@ -41,6 +42,7 @@ public class BufferedRedoLogFileStorageDecorator<T>
     private final int _bufferSize;
     private final IRedoLogFileStorage<T> _storage;
     private final LinkedList<T> _buffer = new LinkedList<T>();
+    private long _bufferWeight = 0;
 
     /**
      * @param bufferSize buffer size
@@ -57,12 +59,21 @@ public class BufferedRedoLogFileStorageDecorator<T>
 
     public void append(T replicationPacket) throws StorageException {
         _buffer.add(replicationPacket);
+        increaseWeight(replicationPacket);
         if (_buffer.size() >= _bufferSize)
             flushBuffer();
     }
 
+    @Override
+    public long getWeight() {
+        return _bufferWeight + _storage.getWeight();
+    }
+
     public void appendBatch(List<T> replicationPackets) throws StorageException {
         _buffer.addAll(replicationPackets);
+        for (T replicationPacket : replicationPackets) {
+            increaseWeight(replicationPacket);
+        }
         if (_buffer.size() >= _bufferSize)
             flushBuffer();
     }
@@ -73,8 +84,10 @@ public class BufferedRedoLogFileStorageDecorator<T>
         if (_logger.isLoggable(Level.FINEST))
             _logger.finest("delete a batch of size " + Math.min(batchSize, storageSize) + " from storage");
         int bufferSize = _buffer.size();
-        for (long i = 0; i < Math.min(bufferSize, batchSize - storageSize); ++i)
-            _buffer.removeFirst();
+        for (long i = 0; i < Math.min(bufferSize, batchSize - storageSize); ++i) {
+            T packet = _buffer.removeFirst();
+            decreaseWeight(packet);
+        }
     }
 
     public StorageReadOnlyIterator<T> readOnlyIterator() throws StorageException {
@@ -102,8 +115,11 @@ public class BufferedRedoLogFileStorageDecorator<T>
         if (storageBatchSize < batchSize) {
             int remaining = batchSize - storageBatchSize;
             int bufferSize = _buffer.size();
-            for (int i = 0; i < Math.min(bufferSize, remaining); ++i)
-                batch.add(_buffer.removeFirst());
+            for (int i = 0; i < Math.min(bufferSize, remaining); ++i) {
+                T packet = _buffer.removeFirst();
+                decreaseWeight(packet);
+                batch.add(packet);
+            }
         }
 
         return batch;
@@ -148,6 +164,19 @@ public class BufferedRedoLogFileStorageDecorator<T>
             _storage.appendBatch(_buffer);
         } finally {
             _buffer.clear();
+            _bufferWeight = 0;
+        }
+    }
+
+    private void decreaseWeight(T packet) {
+        if (packet instanceof GlobalOrderOperationPacket) {
+            _bufferWeight -= ((GlobalOrderOperationPacket) packet).getWeight();
+        }
+    }
+
+    private void increaseWeight(T packet) {
+        if (packet instanceof GlobalOrderOperationPacket) {
+            _bufferWeight += ((GlobalOrderOperationPacket) packet).getWeight();
         }
     }
 

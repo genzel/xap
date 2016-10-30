@@ -77,6 +77,17 @@ public class BacklogConfig {
 
     private int _limitedMemoryCapacity = (int) UNLIMITED;
     private SwapBacklogConfig _swapBacklogConfig = new SwapBacklogConfig();
+    // TODO inject from pu.xml
+    // global policy per backlog! not per member!
+    private BackLogSizePolicy _sizePolicy = BackLogSizePolicyFactory.create("weight-by-operations");
+
+    public void setBackLogSizePolicy(String policy) {
+        _sizePolicy = BackLogSizePolicyFactory.create(policy);
+    }
+
+    public BackLogSizePolicy getBackLogSizePolicy() {
+        return _sizePolicy;
+    }
 
     public void setLimit(String memberLookupName, long limit, LimitReachedPolicy limitReachedPolicy) {
         _membersLimit.put(memberLookupName, limit);

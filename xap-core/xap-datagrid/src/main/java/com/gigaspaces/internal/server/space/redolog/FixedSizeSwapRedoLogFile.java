@@ -227,6 +227,18 @@ public class FixedSizeSwapRedoLogFile<T>
         _externalStorage.close();
     }
 
+    @Override
+    //TODO figure out where to use this method
+    public long getWeight() {
+        //Returns the weight of the redo log file taking both the swapped packets
+        //and the memory residing packets into consideration
+        try {
+            return _memoryRedoLogFile.getWeight() + (_insertToExternal ? _externalStorage.getWeight() : 0);
+        } catch (Exception e) {
+            throw new SwapStorageException(e);
+        }
+    }
+
     /**
      * A read only iterator which iterate over the memory redo log file, and once completed
      * iterating over it, it continue to iterate over the external storage

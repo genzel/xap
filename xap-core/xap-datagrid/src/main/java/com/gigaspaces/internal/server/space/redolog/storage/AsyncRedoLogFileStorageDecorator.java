@@ -63,6 +63,11 @@ public class AsyncRedoLogFileStorageDecorator<T>
         }
     }
 
+    @Override
+    public long getWeight() {
+        throw new UnsupportedOperationException("getWeight is not supported in AsyncRedoLogFileStorageDecorator");
+    }
+
     public void appendBatch(List<T> replicationPackets)
             throws StorageException, StorageFullException {
         initFlusherIfNeeder();

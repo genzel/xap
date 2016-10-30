@@ -54,6 +54,8 @@ public abstract class AbstractTransactionReplicationPacketData
 
     private boolean _fromGateway;
 
+    private transient long _weight;
+
     private static final int FLAGS_GATEWAY = 1 << 0;
 
     public AbstractTransactionReplicationPacketData() {
@@ -153,6 +155,16 @@ public abstract class AbstractTransactionReplicationPacketData
     @Override
     public boolean isFromGateway() {
         return _fromGateway;
+    }
+
+    @Override
+    public long getWeight() {
+        return _weight;
+    }
+
+    @Override
+    public void setWeight(long weight) {
+        this._weight = weight;
     }
 
     public IReplicationPacketEntryData getSingleEntryData() {

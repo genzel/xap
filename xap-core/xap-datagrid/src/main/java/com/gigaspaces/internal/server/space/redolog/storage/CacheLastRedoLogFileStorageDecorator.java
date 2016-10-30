@@ -92,6 +92,15 @@ public class CacheLastRedoLogFileStorageDecorator<T> implements INonBatchRedoLog
         _storage.close();
     }
 
+    @Override
+    public long getWeight() {
+        try {
+            return size();
+        } catch (StorageException e) {
+            throw new IllegalStateException("failed to get weight from CacheLastRedoLogFileStorageDecorator", e);
+        }
+    }
+
     public void deleteFirstBatch(long batchSize) throws StorageException {
         long storageSize = _storage.size();
         _storage.deleteFirstBatch(batchSize);

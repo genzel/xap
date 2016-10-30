@@ -55,7 +55,9 @@ public abstract class AbstractReplicationPacketSingleEntryData
 
     private boolean _fromGateway;
 
-    private int _blobstoreBulkdId;
+    private int _blobstoreBulkId;
+
+    private transient long _weight;
 
     private static final int FLAGS_GATEWAY = 1 << 0;
     private static final int FLAGS_BLOBSTORE_BULK = 1 << 1;
@@ -66,15 +68,15 @@ public abstract class AbstractReplicationPacketSingleEntryData
     }
 
     public boolean isPartOfBlobstoreBulk() {
-        return _blobstoreBulkdId != 0;
+        return _blobstoreBulkId != 0;
     }
 
     public void setBlobstoreBulkId(int blobStoreBulkReplicationId) {
-        _blobstoreBulkdId = blobStoreBulkReplicationId;
+        _blobstoreBulkId = blobStoreBulkReplicationId;
     }
 
     public int getBlobstoreBulkId() {
-        return _blobstoreBulkdId;
+        return _blobstoreBulkId;
     }
 
     public AbstractReplicationPacketSingleEntryData(boolean fromGateway) {
@@ -85,12 +87,20 @@ public abstract class AbstractReplicationPacketSingleEntryData
         return _fromGateway;
     }
 
+    public long getWeight() {
+        return _weight;
+    }
+
+    public void setWeight(long weight) {
+        this._weight = weight;
+    }
+
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(buildFlags());
         if (LRMIInvocationContext.getEndpointLogicalVersion().greaterOrEquals(PlatformLogicalVersion.v11_0_0)) {
             if (isPartOfBlobstoreBulk()) {
-                out.writeInt(_blobstoreBulkdId);
+                out.writeInt(_blobstoreBulkId);
             }
         }
     }
@@ -110,7 +120,7 @@ public abstract class AbstractReplicationPacketSingleEntryData
         _fromGateway = (flags & FLAGS_GATEWAY) != 0;
         if (LRMIInvocationContext.getEndpointLogicalVersion().greaterOrEquals(PlatformLogicalVersion.v11_0_0)) {
             if ((flags & FLAGS_BLOBSTORE_BULK) != 0) {
-                _blobstoreBulkdId = in.readInt();
+                _blobstoreBulkId = in.readInt();
             }
         }
     }
@@ -119,7 +129,7 @@ public abstract class AbstractReplicationPacketSingleEntryData
         out.writeShort(buildFlags());
         if (LRMIInvocationContext.getEndpointLogicalVersion().greaterOrEquals(PlatformLogicalVersion.v11_0_0)) {
             if (isPartOfBlobstoreBulk()) {
-                out.writeInt(_blobstoreBulkdId);
+                out.writeInt(_blobstoreBulkId);
             }
         }
     }
@@ -130,7 +140,7 @@ public abstract class AbstractReplicationPacketSingleEntryData
         _fromGateway = (flags & FLAGS_GATEWAY) != 0;
         if (LRMIInvocationContext.getEndpointLogicalVersion().greaterOrEquals(PlatformLogicalVersion.v11_0_0)) {
             if ((flags & FLAGS_BLOBSTORE_BULK) != 0) {
-                _blobstoreBulkdId = in.readInt();
+                _blobstoreBulkId = in.readInt();
             }
         }
     }
